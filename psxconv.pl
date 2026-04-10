@@ -1,5 +1,8 @@
 #!/usr/local/bin/perl
 
+# PSP PSX converter by Perl
+# http://classg.sytes.net
+
 BEGIN{
 	my $self = $0;
 	$self =~ s/\\/\//g;
@@ -40,8 +43,13 @@ sub TEMPNAME_PREFIX   { '_TMP_' }
 if( scalar @ARGV < 2 ){
 	$success = 1;
 	die <<_USAGE_;
-PSP PBP maker by Perl.
+PSP PSX converter by Perl.
 
+************************************************
+* This script is deprecated.                   *
+* Recommend to use the Dark_AleX's popstation. *
+************************************************
+	
 Usage: psxconv.pl [options] BASE_PBP ISO_IMAGE
  options:
     -o PATH        Output path of converted PSX PBP file.
@@ -70,6 +78,10 @@ Usage: psxconv.pl [options] BASE_PBP ISO_IMAGE
     -s PNG_FILE    Splash screen at starting up the PSX emulator.
     	           The default inherit from BASE_PBP.
 
+************************************************
+* This script is deprecated.                   *
+* Recommend to use the Dark_AleX's popstation. *
+************************************************
 _USAGE_
 }
 

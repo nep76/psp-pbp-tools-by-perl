@@ -2,6 +2,12 @@ PSP PBP Tools by Perl (changes log)
 
 This document was stored in EUC-JP.
 -------------------------------------------------
+2007/01/07
+  -psxconv.pl(あるいはpopstation.exe)で変換したPSゲームのEBOOT.PBPの
+  スプラッシュスクリーンを変更するpsxsplash.plを追加。
+  
+  (2007/01/28にreadmeの編集を行った)
+
 2006/12/29
   -エラーチェックを少し強化。
   -一時ファイルには全て_TMP_プリフィックスが付くように変更。

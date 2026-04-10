@@ -1,4 +1,4 @@
-PSP PBP tools by Perl (061229)
+PSP PBP tools by Perl (070107)
 
 This document was stored in EUC-JP.
 
@@ -20,7 +20,7 @@ This document was stored in EUC-JP.
                  (長い名前のディレクトリ名は短くされます。)
 
   使用例
-      perl kxploit.pl -o /mnt/PSP/GAME -d SNES_TYL /home/me/EBOOT.PBP
+      perl kxploit.pl -o /mnt/PSP/GAME -d SnesPSP_TYL_420me /home/me/EBOOT.PBP
 
 
 PBPファイルの中身を表示する
@@ -71,7 +71,7 @@ PBPファイルの作成/編集を行う
                      読み込み元のPBPファイルから引き継ぎます。
 
                      "パス"は通常のファイルパスですが、
-                     "-" は特殊な値です。.
+                     "-" は特殊な値です。
                      これは、読み込み元として PBP_FILE と
                      同じ物を指定するという意味になります。
                      しかし、このままでは上書きできないので、この値を使用する場合は
@@ -97,13 +97,13 @@ PBPファイルの作成/編集を行う
    
    使用例
      - 新しいPBPファイルをホームディレクトリに作成する
-       perl pbpmake.pl -p ./PARAM.SFP -p ./ICON0.PNG -0 ./DATA.PSP ~/EBOOT.PBP
+       perl pbpmake.pl -p ./PARAM.SFO -p ./ICON0.PNG -0 ./DATA.PSP ~/EBOOT.PBP
      
      - ホームディレクトリにある既存のPBPファイルのICON0.PNGをimage.pngに差し替える
-       perl pbpmake.pl -e - -i ./image.png ~/EBOOT.PBP
+       perl pbpmake.pl -e - -f -i ./image.png ~/EBOOT.PBP
      
      - ホームディレクトリにある既存のPBPファイルからSND0.AT3を取り除く
-       perl pbpmake.pl -e - -s remove ~/EBOOT.PBP
+       perl pbpmake.pl -e - -f -s remove ~/EBOOT.PBP
      
      - ホームディレクトリにある既存のPBPファイルのPIC1.PNGをbg.pngに変更し、
        ICON1.PNGを取り除いて、変更後のPBPファイルを/mnt/umass/EBOOT.PBPへ保存する
@@ -111,12 +111,47 @@ PBPファイルの作成/編集を行う
      
      - ホームディレクトリにある既存のPBPファイルのICON0.PNGを
        ネットワーク上にある http://example.com/psp_icon.png に変更する。
-       perl pbpmake.pl -e - -i http://example.com/psp_icon.png ~/EBOOT.PBP
+       perl pbpmake.pl -e - -f -i http://example.com/psp_icon.png ~/EBOOT.PBP
 
 
-Dark_Alex氏によるカスタムファームウェア OE-B で、
+PSPで使用できるように変換済みのPS1 EBOOT.PBPの
+PS1エミュレータ起動時のスプラッシュスクリーンを変更する
+-------------------------------------------------
+  psxsplash.pl [オプション] PNG_IMAGE PSX_EBOOT_PBP
+  
+    オプション:
+      -d ディレクトリパス
+            一時ファイルの出力先を指定します。
+            デフォルトではカレントディレクトリを使用します。
+            もしカレントディレクトリが書き込み可能ではない場合は、
+            このオプションを使って出力先を変更してください。
+    
+    使用例
+      - Dark_AleX氏製のpopstation(あるいは付属のpsxconv.pl)で変換済みのPSX EBOOT.PBPの
+        スプラッシュスクリーンをPS.PNGに変更する
+        perl psxsplash.pl ./PS.PNG ./EBOOT.PBP
+    
+    注意
+      このスクリプトは常に対象のEBOOT.PBPを直接書き換えます。
+      これによって、大きな容量を持つEBOOT.PBPでも高速で書き換えています。
+      ただし、これは文字通り直接書き換えているので、書き換え前のファイルは失われます。
+
+
+Dark_AleX氏によるカスタムファームウェア 3.02 OE-B 以降で、
 手持ちのPS1ソフトのディスクイメージを使えるようにする
 -------------------------------------------------
+*************************************************
+** [このスクリプトは非推奨です]
+**   PSゲームのISOファイルの変換には、Dark_AleX氏製のpopstationを使う方が良いでしょう。
+**   3.03 OE-B 以降からは、popstationのソースファイルが付属されており、誰でもコンパイル可能です。
+**   また、このバージョンのpopstationからは、ISOファイルの圧縮にも対応していますし、
+**   ゲームコードの入力によるセーブディレクトリの変更、セーブデータタイトルの変更に対応しています。
+**   更に、3.03 OE-C 以降からは、複合化されたDATA.PSPが付属しており、これを使うことでKEYS.BINが不要になります。
+**
+**   このことから、このスクリプトを使う必要はありません。
+**   popstationは、唯一スプラッシュスクリーンの変更ができませんので、
+**   これを行うには付属のpsxsplash.plを使用するとよいでしょう。
+*************************************************
   psxconv.pl [オプション] BASE_PBP ISO_IMAGE
   
     オプション:
@@ -148,7 +183,7 @@ Dark_Alex氏によるカスタムファームウェア OE-B で、
                      デフォルトでは、BASE_PBPが持っているスプラッシュスクリーンを使用します。
 
   概要
-    基本的には、Dark_Alex氏のpopstation.exeと同じ使い方ですが、
+    基本的には、Dark_AleX氏のpopstationと同じ使い方ですが、
     BASE.PBPが、カレントディレクトリのものを暗黙で使用するのではなく、指定できます。
     
     また、セーブディレクトリ名やセーブデータタイトルも変更できますが、
@@ -167,10 +202,14 @@ Dark_Alex氏によるカスタムファームウェア OE-B で、
     
   最後に
     ここでは詳しく触れませんが、このスクリプトによる変換だけではPS1を起動出来るようにはなりません。
-    まず、ファームウェアがDark_Alex氏の OE-B である必要があります。
+    まず、ファームウェアがDark_AleX氏の OE-B である必要があります。
     さらに、PLAYSTATION Storeで販売されているPSP用PS1ソフトに含まれているKEY.BINが必要なため、
     PS3を使って最低一本はソフトを購入する必要があります。
     
-    popstation.exeの結果を見比べて、似たような動作をするようにしているだけなので、
-    popstation.exeでは動くのにこれでは動かない、ということが起こるかもしれません。
+    popstationの結果を見比べて、似たような動作をするようにしているだけなので、
+    popstationでは動くのにこれでは動かない、ということが起こるかもしれません。
     よくわからない数値は0x00で埋めてしまっていたりするので。
+
+
+-------------------------------------------------
+pen@http://classg.sytes.net/

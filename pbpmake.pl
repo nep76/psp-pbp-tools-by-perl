@@ -17,7 +17,6 @@ BEGIN{
 #use strict;
 #use warnings;
 use vars qw( $VERSION );
-use IO::Socket;
 use Getopt::Std;
 
 use File::IOLite;
@@ -26,7 +25,7 @@ use PSP::PBP::Maker;
 use PSP::PBP::Parser;
 use HttpDownloader;
 
-$VERSION = "2.0.0";
+$VERSION = "2.0.1";
 
 sub BUFFER_SIZE     { 1024 }
 sub TEMPNAME_PREFIX { '_TMP_' }
@@ -189,10 +188,7 @@ print "done.\n";
 $success = 1;
 
 END{
-	if( scalar( @g_tmpfiles ) ){
-		print ".\n";
-		unlink( @g_tmpfiles );
-	}
+	unlink( @g_tmpfiles ) if( scalar( @g_tmpfiles ) );
 	print "\nError occurred." if( not $success );
 }
 __END__
