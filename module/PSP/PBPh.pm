@@ -1,21 +1,25 @@
 package PSP::PBPh;
 
 # PSP PBP shared module
-# Version: 1.0.0
 # http://classg.sytes.net
 
-use vars qw(@ISA @EXPORT);
+use vars qw( $VERSION @ISA @EXPORT );
 use Exporter;
+
+$VERSION = "1.1.0";
+
 @ISA = qw(Exporter);
 
 @EXPORT = qw(
+	PBP_HEADER
 	PBP_VERSION
 	PBP_DATA_SEQUENCE
 	PBP_DATA_LABELS
 	pbp_name2label
 );
 
-sub PBP_VERSION      { "\x00\x00\x01\x00" }
+sub PBP_HEADER { "\x00PBP" }
+sub PBP_VERSION{ "\x00\x00\x01\x00" }
 
 sub PBP_DATA_SEQUENCE{
 	return (qw/

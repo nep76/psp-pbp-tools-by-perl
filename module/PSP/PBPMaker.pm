@@ -1,15 +1,16 @@
 package PSP::PBPMaker;
 
 # PSP PBP maker module
-# Version: 1.0.0
 # http://classg.sytes.net
 
 use strict;
 use warnings;
-use vars qw( $AUTOLOAD );
+use vars qw( $VERSION $AUTOLOAD );
 
 use File::IOLite;
 use PSP::PBPh;
+
+$VERSION = "1.0.1";
 
 sub new{
 	my $class = shift;
@@ -53,8 +54,11 @@ sub set{
 	my $self = shift;
 	my $pbpf = shift;
 	my $path = shift;
-		
-	$self->{'error'}->putin("$pbpf is Invalid") if( not exists $self->{'pbpfs'}->{$pbpf} );
+	
+	if( not exists $self->{'pbpfs'}->{$pbpf} ){
+		$self->{'error'}->putin("$pbpf is Invalid");
+		return;
+	}
 	
 	$self->{'pbpfs'}->{$pbpf} = $path;
 	
@@ -77,7 +81,8 @@ sub AUTOLOAD{
 sub make{
 	my $self = shift;
 	
-	my ( %offset, $len, $prev_offset );
+	my ( %offset, $len, $prev_offset, @tempfiles );
+	my @temp_seq = (qw/A B C D E F G H/);
 	$prev_offset = 40;
 	foreach( PBP_DATA_SEQUENCE ){
 		$len = 0;
@@ -94,7 +99,7 @@ sub make{
 	my $Pbp = File::IOLite->new( $self->{'pbp'} );
 	$Pbp->open( 'WR', 'FIO_CREATE', 'FIO_APPEND', 'FIO_BLANK' );
 	$Pbp->binary;
-	$Pbp->write( "\x00PBP" . PBP_VERSION );
+	$Pbp->write( PBP_HEADER . PBP_VERSION );
 	
 	$self->{'error'}->putin( "External error:" . $Pbp->error ) if( $Pbp->error );
 	
@@ -116,7 +121,8 @@ sub make{
 	}
 	
 	$Pbp->close;
+	
+	return 1;
 }
-
 1;
 __END__

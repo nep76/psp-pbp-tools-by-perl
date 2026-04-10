@@ -1,15 +1,16 @@
 package PSP::PBPParser;
 
 # PSP PBP parser module
-# Version: 1.0.0
 # http://classg.sytes.net
 
 use strict;
 use warnings;
-use vars qw(@ISA @EXPORT);
+use vars qw( $VERSION @ISA @EXPORT );
 
 use PSP::PBPh;
 use File::IOLite;
+
+$VERSION = "1.0.0";
 
 sub BUFFER_SIZE{ 1024 }
 

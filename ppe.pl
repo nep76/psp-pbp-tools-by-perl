@@ -1,11 +1,11 @@
 #!/usr/local/bin/perl
 
 # PSP PBP editor by Perl
-# Version: 1.1.1
 # http://classg.sytes.net
 
 use strict;
 use warnings;
+use vars qw( $VERSION $g_tmpfiles );
 
 BEGIN{
 	my $self = $0;
@@ -18,14 +18,26 @@ BEGIN{
 	push( @INC, "$self/module" );
 }
 
+use IO::Socket;
+use File::IOLite;
+
 use PSP::PBPh;
 use PSP::PBPParser;
 use PSP::PBPMaker;
+
+$VERSION = "1.2.0";
 
 sub LIST   { 'LIST' }
 sub CREATE { 'CREATE' }
 sub REWRITE{ 'REWRITE' }
 sub EXTRACT{ 'EXTRACT' }
+
+sub BUFFER_SIZE     { 1024 }
+sub PROTOCOL        { "tcp" }
+sub HTTP_PORT       { 80 }
+sub HTTP_METHOD     { "GET" }
+sub HTTP_VERSION    { "HTTP/1.0" }
+sub HTTP_USER_AGENT { "PSP PBP editor $VERSION (http://classg.sytes.net)" }
 
 if   ( not defined $ARGV[0] ){ usage(); }
 elsif( scalar( @ARGV ) < 1 ) { error("Not enought arguments"); }
@@ -66,15 +78,21 @@ Usage: perl ppe.pl [operation] Target_PBP_File
       rewrite CONTROL Replace (or insert) some files in the Target_PBP_File.
 
     CONTROL:
-      -p PATH  PARAM.SFO. This is PBP metadata file. (Required)
-      -m PATH  ICON0.PNG. This is main icon image.
-      -a PATH  ICON1.PMF. This is animation icon file.
-      -f PATH  PIC0.PNG.  This is floating image on the background image.
-                           (This is overlaid by the PIC1.PNG)
-      -b PATH  PIC1.PNG.  This is background image.
-      -s PATH  SND0.AT3.  This is background music.
-      -0 PATH  DATA.PSP.
-      -1 PATH  DATA.PSAR.
+      -p PATH | HTTP-URI    PARAM.SFO.
+                            This is PBP metadata file.
+      -m PATH | HTTP-URI    CON0.PNG.
+                            This is main icon image.
+      -a PATH | HTTP-URI    ICON1.PMF.
+                            This is animation icon file.
+      -f PATH | HTTP-URI    PIC0.PNG.
+                            This is floating image on the background image.
+                            (This is overlaid on the PIC1.PNG)
+      -b PATH | HTTP-URI    PIC1.PNG.
+                            This is background image.
+      -s PATH | HTTP-URI    SND0.AT3.
+                            This is background music.
+      -0 PATH | HTTP-URI    DATA.PSP.
+      -1 PATH | HTTP-URI    DATA.PSAR.
 
       (If you set PATH to "none" then it will remove from the Target_PBP_File.)
       
@@ -153,12 +171,16 @@ sub create{
 	error("Not enoght \"create\" arguments",) if( scalar( @_ ) % 2 );
 	
 	my %files = ( @_ );
-	normalize_keys( \%files );
+	delete $files{'-o'} if( exists $files{'-o'} );
 	
-	my $Newpbp = PSP::PBPMaker->new( $new_pbp_path );
-	$Newpbp->set( $_, ( $files{$_} || '' ) ) foreach( PBP_DATA_SEQUENCE );
-	print "Writing to $new_pbp_path.\n";
-	$Newpbp->make;
+	my $DummyPBP = File::IOLite->new( $new_pbp_path );
+	$DummyPBP->open( 'WR', 'FIO_CREATE', 'FIO_BLANK' );
+	$DummyPBP->binary;
+	$DummyPBP->write( PBP_HEADER . PBP_VERSION );
+	$DummyPBP->write( "\x00" x 4 ) foreach( PBP_DATA_SEQUENCE );
+	$DummyPBP->close;
+	
+	rewrite( %files, $new_pbp_path );
 }
 
 sub rewrite{
@@ -189,12 +211,18 @@ sub rewrite{
 	
 	my $Newpbp = PSP::PBPMaker->new( $files{'-o'} );
 	my @extract_items;
+	my @http_items;
 	print "Checking CONTROL:\n";
 	foreach( PBP_DATA_SEQUENCE ){
 		print "    " . pbp_name2label( $_ ) . ": "; 
 		if( exists $files{$_} ){
-			$Newpbp->set( $_, $files{$_} );
-			print ( $files{$_} ? "rewrite to $files{$_}" : "remove" );
+			if( $files{$_} =~ /^http:\/\// ){
+				print "HTTP $files{$_}\n";
+				push( @http_items, $_ ) ;
+			} else{
+				$Newpbp->set( $_, $files{$_} );
+				print ( $files{$_} ? "FILE $files{$_}" : "remove" );
+			}
 		} elsif( $Srcpbp->flen( $_ ) ){
 			push( @extract_items, $_ );
 			print "divert"
@@ -204,30 +232,36 @@ sub rewrite{
 		print "\n";
 	}
 	
-	
 	my ( $tmpname, @tmpfiles );
 	$tmpname = time;
 	print "Extract diverting tempfiles:\n" if( scalar( @extract_items ) );
 	foreach( @extract_items ){
 		$tmpname++;
-		$Newpbp->set( $_, "$workdir/temp_$tmpname" );
+		$Newpbp->set( $_, "$workdir/ppe_temp_$tmpname" );
 		$Srcpbp->output( $_, $Newpbp->get( $_ ) );
 		push( @tmpfiles, $Newpbp->get( $_ ) );
 	}
 	print "    " . join( "\n    ", @tmpfiles ) . "\n";
 	
-	print "Rewriting to $files{'-o'}.\n";
-	$Newpbp->make;
+	print "Downloading files via HTTP:\n" if( scalar( @http_items ) );
+	foreach( @http_items ){
+		$tmpname++;
+		$Newpbp->set( $_, "$workdir/ppe_temp_$tmpname" );
+		download( "$workdir/ppe_temp_$tmpname", $files{$_} ,$Newpbp);
+		push( @tmpfiles, $Newpbp->get( $_ ) );
+	}
+	
+	print "Writing to $files{'-o'}.\n";
+	$Newpbp->make || die $Newpbp->error;
 	
 	if( scalar( @tmpfiles ) ){
 		unlink( @tmpfiles );
-		print "Removed diverting tempfiles.\n";
+		print "Removed tempfiles.\n";
 	}
 }
 
 sub extract{
 	my $src_pbp_path = pop;
-	
 	my %files;
 	
 	for( my $i = 0; $i < scalar( @_ ); $i++ ){
@@ -270,6 +304,75 @@ sub extract{
 		print "Extracting " . pbp_name2label( $_ ) . " to $files{$_} ...\n";
 		$Pbp->output( $_, $files{$_} );
 	}
+}
+
+
+sub download{
+	my $filepath = shift;
+	my $uri      = substr( shift, 7 );
+	
+	my ( $proto, $host, $port, $path );
+	$proto = PROTOCOL;
+	( $host, $path ) = split( /\//, $uri , 2 );
+	( $host, $port ) = split( /:/ , $host, 2 );
+	$port = HTTP_PORT if( not defined $port );
+	
+	print "    Connect to $host:$port $proto\n";
+	my $http_sock = IO::Socket::INET->new(
+		PeerAddr => $host,
+		PeerPort => $port,
+		Proto    => $proto
+	);
+	
+	error("Can't open socket to _VAR_ _VAR_/_VAR_", $host, $port, $proto ) if( not ref $http_sock );
+	
+	binmode( $http_sock );
+	
+	_http_req( $http_sock, HTTP_METHOD . " /$path " . HTTP_VERSION );
+	_http_req( $http_sock, "Host: $host" );
+	_http_req( $http_sock, "User-Agent: " . HTTP_USER_AGENT );
+	_http_req( $http_sock, "Connection: close" );
+	
+	_http_req( $http_sock, "" );
+	
+	$http_sock->flush;
+	
+	my $http_status = substr( <$http_sock>, 9, 3 );
+	error("HTTP access is not successful. Status _VAR_ ", $http_status ) if( $http_status != 200 );
+	
+	my $clen = 0;
+	my $http_head = '';
+	1 while( <$http_sock> ne "\x0D\x0A" );
+	
+	print "    Download /$path to $filepath\n";
+	_download_file( $filepath, $http_sock, $clen );
+	
+	$http_sock->close;
+	
+	return 1;
+}
+
+sub _http_req{ print {$_[0]} join( '', $_[1], "\x0D\x0A" );  }
+
+sub _download_file{
+	my $filepath  = shift;
+	my $http_sock = shift;
+	my $clen      = shift;
+	
+	my $Tempfile = File::IOLite->new( $filepath );
+	$Tempfile->open( 'WR', 'FIO_CREATE', 'FIO_BLANK' );
+	$Tempfile->binary;
+	
+	my $buf;
+	while( not eof $http_sock ){
+		error( "External Error: _VAR_", $Tempfile->error ) if( $Tempfile->error );
+		read( $http_sock, $buf, BUFFER_SIZE );
+		$Tempfile->write( $buf );
+	}
+	
+	$Tempfile->close;
+	
+	return 1;
 }
 
 __END__
