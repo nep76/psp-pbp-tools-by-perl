@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl
 
 # PSP KXploit tool by Perl
-# Version: 2.0.2
+# Version: 2.1.2
 # http://classg.sytes.net
 
 use strict;
@@ -53,6 +53,8 @@ Usage: perl pkx.pl [options] Install_PBP_File
                  If this option is not set then will use current directory.
       -d DIRNAME Directory name.
                  If this option is not set then will use current date.
+      -a         Hide the broken file by alternative method.
+                 (Allow long directory name)
       -h         Displaying help document. (It is this)
       -n         Do not hide the broken file.
 _USAGE_
@@ -72,6 +74,8 @@ sub read_args{
 			die "$conf->{'path'} is not a directory." if( not -d $conf->{'path'} );
 		} elsif( $argv->[$i] eq '-d' ){
 			$conf->{'dir'} = $argv->[++$i];
+		} elsif( $argv->[$i] eq '-a' ){ 
+			$conf->{'alt_hide'} = 1;
 		} elsif( $argv->[$i] eq '-n' ){
 			$conf->{'nohide'} = 1;
 		} elsif( $argv->[$i] eq '-h' ){
@@ -91,14 +95,17 @@ sub make_kxploit{
 	make_dir:{
 		if( $conf->{'nohide'} ){
 			$datadir = $conf->{'dir'};
-			$headdir = $datadir;
+			$headdir = $datadir . '%';
+		} elsif( $conf->{'alt_hide'} ){
+			$datadir = '__SCE__' . $conf->{'dir'};
+			$headdir = '%' . $datadir;
 		} else{
 			$datadir = sprintf( '%- 31s', $conf->{'dir'} ) . '1';
 			$datadir =~ tr/ /_/;
-			$headdir = substr( $datadir, 0, 6 ) . '~1';
+			$headdir = substr( $datadir, 0, 6 ) . '~1%';
 		}
 		$datadir = $conf->{'path'} . '/' . $datadir;
-		$headdir = $conf->{'path'} . '/' . $headdir . '%';
+		$headdir = $conf->{'path'} . '/' . $headdir;
 	}
 	
 	my $Pbp = PSP::PBPParser->new( $conf->{'pbp'} )->parse_header;
