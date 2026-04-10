@@ -38,6 +38,16 @@ if( scalar @ARGV < 1 ){
 	die <<_USAGE_;
 PSP PBP maker by Perl.
 
+*************************************************
+** 2026/04/10
+** This script allows specifying URIs in the PBP struct files,
+** but due to the current state of the modern Web,
+** this feature should not be used.
+**
+** Technically, it performs HTTP/1.0 GET requests without TLS.
+** Most servers will reject that connections.
+*************************************************
+
 Usage: pbpedit.pl [options] [PBP struct files] PBP_FILE
  options:
     -e - | PATH    The default is new creation to PBP_FILE.
@@ -68,6 +78,16 @@ Usage: pbpedit.pl [options] [PBP struct files] PBP_FILE
     -s remove | PATH | URI    SND0.AT3
     -0 remove | PATH | URI    DATA.PSP
     -1 remove | PATH | URI    DATA.PSAR
+
+*************************************************
+** 2026/04/10
+** This script allows specifying URIs in the PBP struct files,
+** but due to the current state of the modern Web,
+** this feature should not be used.
+**
+** Technically, it performs HTTP/1.0 GET requests without TLS.
+** Most servers will reject that connections.
+*************************************************
 _USAGE_
 }
 
