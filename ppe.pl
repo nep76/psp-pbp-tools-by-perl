@@ -5,7 +5,7 @@
 
 use strict;
 use warnings;
-use vars qw( $VERSION $g_tmpfiles );
+use vars qw( $VERSION @g_tmpfiles );
 
 BEGIN{
 	my $self = $0;
@@ -25,7 +25,7 @@ use PSP::PBPh;
 use PSP::PBPParser;
 use PSP::PBPMaker;
 
-$VERSION = "1.2.0";
+$VERSION = "1.2.1";
 
 sub LIST   { 'LIST' }
 sub CREATE { 'CREATE' }
@@ -217,7 +217,7 @@ sub rewrite{
 		print "    " . pbp_name2label( $_ ) . ": "; 
 		if( exists $files{$_} ){
 			if( $files{$_} =~ /^http:\/\// ){
-				print "HTTP $files{$_}\n";
+				print "HTTP $files{$_}";
 				push( @http_items, $_ ) ;
 			} else{
 				$Newpbp->set( $_, $files{$_} );
@@ -232,32 +232,27 @@ sub rewrite{
 		print "\n";
 	}
 	
-	my ( $tmpname, @tmpfiles );
-	$tmpname = time;
-	print "Extract diverting tempfiles:\n" if( scalar( @extract_items ) );
+	my $tmpname = time;
+	print "Extracting to divert tempfiles:\n" if( scalar( @extract_items ) );
 	foreach( @extract_items ){
 		$tmpname++;
 		$Newpbp->set( $_, "$workdir/ppe_temp_$tmpname" );
 		$Srcpbp->output( $_, $Newpbp->get( $_ ) );
-		push( @tmpfiles, $Newpbp->get( $_ ) );
+		push( @g_tmpfiles, $Newpbp->get( $_ ) );
 	}
-	print "    " . join( "\n    ", @tmpfiles ) . "\n";
+	print "    " . join( "\n    ", @g_tmpfiles ) . "\n";
 	
 	print "Downloading files via HTTP:\n" if( scalar( @http_items ) );
+	my %download_list;
 	foreach( @http_items ){
 		$tmpname++;
 		$Newpbp->set( $_, "$workdir/ppe_temp_$tmpname" );
-		download( "$workdir/ppe_temp_$tmpname", $files{$_} ,$Newpbp);
-		push( @tmpfiles, $Newpbp->get( $_ ) );
+		download( "$workdir/ppe_temp_$tmpname", $files{$_} );
+		push( @g_tmpfiles, $Newpbp->get( $_ ) );
 	}
 	
 	print "Writing to $files{'-o'}.\n";
 	$Newpbp->make || die $Newpbp->error;
-	
-	if( scalar( @tmpfiles ) ){
-		unlink( @tmpfiles );
-		print "Removed tempfiles.\n";
-	}
 }
 
 sub extract{
@@ -317,14 +312,14 @@ sub download{
 	( $host, $port ) = split( /:/ , $host, 2 );
 	$port = HTTP_PORT if( not defined $port );
 	
-	print "    Connect to $host:$port $proto\n";
+	print "    Connect to $host:$port/$proto\n";
 	my $http_sock = IO::Socket::INET->new(
 		PeerAddr => $host,
 		PeerPort => $port,
 		Proto    => $proto
 	);
 	
-	error("Can't open socket to _VAR_ _VAR_/_VAR_", $host, $port, $proto ) if( not ref $http_sock );
+	error("Can not connect to _VAR_:_VAR_/_VAR_", $host, $port, $proto ) if( not ref $http_sock );
 	
 	binmode( $http_sock );
 	
@@ -373,6 +368,13 @@ sub _download_file{
 	$Tempfile->close;
 	
 	return 1;
+}
+
+END{
+	if( scalar( @g_tmpfiles ) ){
+		print "Removing tempfiles.\n";
+		unlink( @g_tmpfiles );
+	}
 }
 
 __END__
