@@ -1,8 +1,5 @@
 package PSP::PBP::PSISO::STARTDAT::Maker;
 
-# PSP PSISO STARTDAT maker modules
-# http://classg.sytes.net
-
 #use strict;
 #use warnings;
 use vars qw( $VERSION );

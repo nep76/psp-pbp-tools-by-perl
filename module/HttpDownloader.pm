@@ -1,7 +1,6 @@
 package HttpDownloader;
 
 # PSP PBP tools shared module (Downloader)
-# http://classg.sytes.net
 
 #use strict;
 #use warnings;

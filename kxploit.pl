@@ -92,15 +92,17 @@ $SRC_PBP  = File::IOLite->new( $src_pbp );
 $SRC_PBP->open( 'RD' );
 $SRC_PBP->binary;
 
-printf( "Creating data directory...\n" );
+printf( "Creating data directory..." );
 mkdir( $data_dir ) or die( "Failed to mkdir: $data_dir: $!\n" );
+print "done.\n";
 
-printf( "Ready to writing data...\n" );
+printf( "Ready to writing data..." );
 $loop = int( ( $SRC_PBP_INFO->total_len - $boundary ) / BUFFER_SIZE );
 $frac = ( $SRC_PBP_INFO->total_len - $boundary ) - ( BUFFER_SIZE() * $loop );
 $SRC_PBP->move( 'HEAD', $boundary ) or die( $SRC_PBP->error ."\n" );
+print "done.\n";
 
-printf( "Writing data to %s/EBOOT.PBP...\n", $data_dir );
+printf( "Writing data to %s/EBOOT.PBP...", $data_dir );
 $DATA_PBP = File::IOLite->new( $data_dir . "/EBOOT.PBP" );
 $DATA_PBP->open( 'WR', 'FIO_CREATE', 'FIO_BLANK' );
 $DATA_PBP->binary;
@@ -108,12 +110,15 @@ $DATA_PBP->write( $SRC_PBP->read( BUFFER_SIZE ) ) while( $loop-- );
 $DATA_PBP->write( $SRC_PBP->read( $frac )       ) if( $frac );
 $DATA_PBP->close;
 die( $DATA_PBP->error ."\n" ) if( $DATA_PBP->error );
+print "done.\n";
+
 undef $DATA_PBP;
 
-printf( "Creating header directory...\n" );
+printf( "Creating header directory..." );
 mkdir( $head_dir ) or die( "Failed to mkdir: $head_dir: $!\n" );
+print "done.\n";
 
-printf( "Ready to writing header...\n" );
+printf( "Ready to writing header..." );
 my ( $pbp_head, $pbp_ver, @pbp_index );
 $SRC_PBP->move( 'HEAD' );
 $SRC_PBP->read( 4, 0, \$pbp_head );
@@ -132,8 +137,9 @@ $boundary -= length( $_ ) foreach( @pbp_index );
 
 $loop = int( $boundary / BUFFER_SIZE );
 $frac = $boundary - ( BUFFER_SIZE() * $loop );
+print "done.\n";
 
-printf( "Writing header to %s/EBOOT.PBP...\n", $head_dir );
+printf( "Writing header to %s/EBOOT.PBP...", $head_dir );
 $DATA_PBP = File::IOLite->new( $head_dir . '/EBOOT.PBP' );
 $DATA_PBP->open( 'WR', 'FIO_CREATE', 'FIO_BLANK' );
 $DATA_PBP->binary;
@@ -142,11 +148,8 @@ $DATA_PBP->write( $SRC_PBP->read( BUFFER_SIZE ) ) while( $loop-- );
 $DATA_PBP->write( $SRC_PBP->read( $frac )       ) if( $frac );
 $DATA_PBP->close;
 die( $DATA_PBP->error ."\n" ) if( $DATA_PBP->error );
+print "done.\n";
 undef $DATA_PBP;
 
 $SRC_PBP->close;
 die( $SRC_PBP->error ."\n" ) if( $SRC_PBP->error );
-
-printf( "Done.\n" );
-
-__END__

@@ -1,8 +1,5 @@
 package PSP::PBP::PSISO::Const;
 
-# PSP PSISO shared module
-# http://classg.sytes.net
-
 #use strict;
 #use warnings;
 use vars qw( $VERSION @ISA @EXPORT );

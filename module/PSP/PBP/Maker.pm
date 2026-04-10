@@ -1,8 +1,5 @@
 package PSP::PBP::Maker;
 
-# PSP PBP maker
-# http://classg.sytes.net
-
 #use strict;
 #use warnings;
 use vars qw( $VERSION );

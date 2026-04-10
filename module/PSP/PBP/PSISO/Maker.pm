@@ -1,8 +1,5 @@
 package PSP::PBP::PSISO::Maker;
 
-# PSP PSISO maker module
-# http://classg.sytes.net
-
 #use strict;
 #use warnings;
 use vars qw( $VERSION );

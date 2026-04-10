@@ -1,8 +1,5 @@
 package PSP::PBP::Parser;
 
-# PSP PBP parser
-# http://classg.sytes.net
-
 #use strict;
 #use warnings;
 use vars qw( $VERSION );
@@ -74,16 +71,15 @@ sub parse{
 	
 	$self->{'total_len'} = ( stat( $PBP->fh ) )[7];
 	
-	if( $PBP->read( 4 ) ne PBP_HEADER ){
+	if( $PBP->read( PBP_HEADER_FIELD_LENGTH ) ne PBP_HEADER ){
 		$self->{'error'}->putin( "$self->{'file'} is not valid PBP header" );
 		return;
-	} elsif( $PBP->read( 4 ) ne PBP_VERSION ){
-		$self->{'error'}->putin( "$self->{'file'} is not supported PBP version" );
-		return ;
 	}
 	
+	$PBP->move( 'CUR', PBP_HEADER_FIELD_LENGTH );
+	
 	foreach( PBP_STRUCT_SEQ ){
-		$self->{'offset'}->{$_} = little_endian_hex2dec( $PBP->read( 4 ) );
+		$self->{'offset'}->{$_} = little_endian_hex2dec( $PBP->read( PBP_HEADER_FIELD_LENGTH ) );
 	}
 	
 	my ( $prev_len, $prev_offset ) = ( 0, 0 );

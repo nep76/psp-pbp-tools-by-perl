@@ -1,8 +1,5 @@
 package PSP::PBP::Const;
 
-# PSP PBP tools shared module
-# http://classg.sytes.net
-
 #use strict;
 #use warnings;
 use vars qw( $VERSION @ISA @EXPORT );

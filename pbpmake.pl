@@ -29,7 +29,7 @@ use HttpDownloader;
 $VERSION = "2.0.0";
 
 sub BUFFER_SIZE     { 1024 }
-sub TEMPNAME_PREFIX { 'TEMP_PBPTOOLS_' }
+sub TEMPNAME_PREFIX { '_TMP_' }
 
 my ( $success, @g_tmpfiles );
 $success = 0;
@@ -144,7 +144,7 @@ if( scalar @inherit_parts ){
 		
 		print "  Extracting inherit $_ to $temppath...";
 		$SRC_PBP->fdump( $_, $temppath );
-		print "Done.\n";
+		print "done.\n";
 		
 		$NEW_PBP->set( $_, $temppath );
 	}
@@ -171,7 +171,7 @@ if( scalar @http_parts ){
 		
 		printf( "  Downloading /%s to %s...", $Http->path, $temppath );
 		$Http->download( $temppath ) or die( $Http->error . "\n" );
-		print "Done.\n";
+		print "done.\n";
 		
 		$Http->disconnect;
 		print "  Disconnected from foreign server.\n";
@@ -185,6 +185,7 @@ $NEW_PBP->make;
 if( $NEW_PBP->error ){
 	die( $NEW_PBP->error . "\n" );
 }
+print "done.\n";
 $success = 1;
 
 END{
@@ -192,10 +193,6 @@ END{
 		print ".\n";
 		unlink( @g_tmpfiles );
 	}
-	if( $success ){
-		print "Done.";
-	} else{
-		print "\nError occurred."
-	}
+	print "\nError occurred." if( not $success );
 }
 __END__

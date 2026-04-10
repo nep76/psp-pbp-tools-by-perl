@@ -13,10 +13,11 @@ BEGIN{
 
 #use strict;
 #use warnings;
-use vars qw( $VERSION @g_tmpfiles );
+use vars qw( $VERSION $TempPrefix @g_tmpfiles );
 use Getopt::Std;
 
 use File::IOLite;
+use PSP::PBP::Const;
 use PSP::PBP::Parser;
 use PSP::PBP::Maker;
 use PSP::PBP::PSISO::Const;
@@ -30,11 +31,14 @@ use DecHex qw( dec2little_endian_hex );
 $VERSION = "1.0.0";
 
 $SIG{'INT'} = sub{ exit 1 };
+my $success = 0;
 
 sub HAPPY_MAGIC_NUMBER{ 37633 }
 sub BUFFER_SIZE       { 1024 }
+sub TEMPNAME_PREFIX   { '_TMP_' }
 
 if( scalar @ARGV < 2 ){
+	$success = 1;
 	die <<_USAGE_;
 PSP PBP maker by Perl.
 
@@ -43,7 +47,7 @@ Usage: psxconv.pl [options] BASE_PBP ISO_IMAGE
     -o PATH        Output path of converted PSX PBP file.
                    The default is "./EBOOT.PBP".
 
-    -f             If the target PBP file (by -o option) alread exists,
+    -f             If the target PBP file (by -o option) already exists,
                    then overwrite it.
 
     -d TEMP_DIR    Temporary directory path.
@@ -57,7 +61,7 @@ Usage: psxconv.pl [options] BASE_PBP ISO_IMAGE
                    "Y" is digits.
                    (ex. _SLPS_12345 => ms0:/PSP/SAVEDATA/SLPS12345 )
 
-                   The default is "_SLPS_00000".
+                   The default is "_SLPS_10000".
 
     -t SAVE_DATA_TITLE
                    This is title of PSX save data.
@@ -65,6 +69,7 @@ Usage: psxconv.pl [options] BASE_PBP ISO_IMAGE
 
     -s PNG_FILE    Splash screen at starting up the PSX emulator.
     	           The default inherit from BASE_PBP.
+
 _USAGE_
 }
 
@@ -83,6 +88,7 @@ die( "Base PBP file \"$base_pbp\" not found.\n" ) if( not -e $base_pbp );
 
 $argv{'o'} ||= "./EBOOT.PBP";
 die( "$argv{'o'} already exists\n" ) if( -f $argv{'o'} and not $argv{'f'} );
+die( "$argv{'o'} path not found\n" ) if( not -d substr( $argv{'o'}, 0, rindex( $argv{'o'}, '/' ) ) );
 
 $argv{'d'} ||= ".";
 die( "$argv{'d'} not found\n" ) if( not -d $argv{'d'} );
@@ -95,42 +101,35 @@ $argv{'t'} ||= "PSX SAVEDATA";
 $argv{'s'} ||= '';
 die( "$argv{'s'} not found\n" ) if( $argv{'s'} and not -f $argv{'s'} );
 
-push( @g_tmpfiles, "$argv{'d'}/PARAM.SFO", "$argv{'d'}/DATA.PSP", "$argv{'d'}/DATA.PSAR" );
-extract_files(
-	PSP::PBP::Parser->new( $base_pbp ),
-	'PARAM.SFO' => "$argv{'d'}/PARAM.SFO",
-	'DATA.PSP'  => "$argv{'d'}/DATA.PSP",
-	'DATA.PSAR' => "$argv{'d'}/DATA.PSAR"
-);
+$TempPrefix = sprintf( "%s/%s", $argv{'d'}, TEMPNAME_PREFIX );
 
-push( @g_tmpfiles, "$argv{'d'}/STARTDAT" );
-extract_files(
-	PSP::PBP::PSISO::Parser->new( "$argv{'d'}/DATA.PSAR" ),
-	'STARTDAT' => "$argv{'d'}/STARTDAT"
-);
 
-my $STARTDAT = PSP::PBP::PSISO::STARTDAT::Parser->new( "$argv{'d'}/STARTDAT" );
+extract_files( PSP::PBP::Parser->new( $base_pbp ), $argv{'d'}, PBP_STRUCT_SEQ );
+
+extract_files( PSP::PBP::PSISO::Parser->new( "${TempPrefix}DATA.PSAR" ), $argv{'d'}, 'STARTDAT' );
+
+my $STARTDAT = PSP::PBP::PSISO::STARTDAT::Parser->new( "${TempPrefix}STARTDAT" );
 $STARTDAT->parse;
 die( $STARTDAT->error . "\n" ) if( $STARTDAT->error );
 
 if( $argv{'s'} ){
-	push( @g_tmpfiles, "$argv{'d'}/PGD", "$argv{'d'}/NEW_STARTDA" );
+	push( @g_tmpfiles, "${TempPrefix}PGD", "${TempPrefix}NEW_STARTDA" );
 	
-	print "Extracting PGD to $argv{'d'}/PGD...";
-	$STARTDAT->fdump( 'PGD', "$argv{'d'}/PGD" );
+	print "Extracting PGD to ${TempPrefix}PGD...";
+	$STARTDAT->fdump( 'PGD', "${TempPrefix}PGD" );
 	print "done.\n";
 	
 	print "Rebuilding STARTDAT...";
 	
-	my $NEW_STARTDAT = PSP::PBP::PSISO::STARTDAT::Maker->new( "$argv{'d'}/NEW_STARTDAT" );
+	my $NEW_STARTDAT = PSP::PBP::PSISO::STARTDAT::Maker->new( "${TempPrefix}NEW_STARTDAT" );
 	$NEW_STARTDAT->set( 'SPLASH.PNG', $argv{'s'} );
-	$NEW_STARTDAT->set( 'PGD', "$argv{'d'}/PGD" );
+	$NEW_STARTDAT->set( 'PGD', "${TempPrefix}PGD" );
 	$NEW_STARTDAT->make;
 	die( $NEW_STARTDAT->error . "\n" ) if( $NEW_STARTDAT->error );
-	unlink( "$argv{'d'}/STARTDAT" ) or die( "Failed to unlink: $!" );
-	rename( "$argv{'d'}/NEW_STARTDAT", "$argv{'d'}/STARTDAT" ) or die( "Failed to rename: $!" );
+	unlink( "${TempPrefix}STARTDAT" ) or die( "Failed to unlink: $!" );
+	rename( "${TempPrefix}NEW_STARTDAT", "${TempPrefix}STARTDAT" ) or die( "Failed to rename: $!" );
 	
-	$STARTDAT->init->file( "$argv{'d'}/STARTDAT" );
+	$STARTDAT->init->file( "${TempPrefix}STARTDAT" );
 	$STARTDAT->parse;
 	die( $STARTDAT->error . "\n" ) if( $STARTDAT->error );
 	print "done.\n";
@@ -138,35 +137,37 @@ if( $argv{'s'} ){
 
 my $pgd_offset = GAMEDATA_OFFSET() + ( stat( $isoimg ) )[7] + $STARTDAT->offset( 'PGD' );
 
-push( @g_tmpfiles, "$argv{'d'}/UNKNOWN.DAT" );
+push( @g_tmpfiles, "${TempPrefix}UNKNOWN.DAT" );
 conv_unknown_dat(
-	"$argv{'d'}/UNKNOWN.DAT",
+	"${TempPrefix}UNKNOWN.DAT",
 	'pgd_offset'          => $pgd_offset,
 	'unknown_stream_seed' => ( stat( $isoimg ) )[7],
 	'dirname'             => $argv{'n'},
 	'title'               => $argv{'t'}
 );
 
-push( @g_tmpfiles, "$argv{'d'}/NEW_DATA.PSAR" );
-print "Creating new DATA.PSAR to $argv{'d'}/NEW_DATA.PSAR...";
-my $PSISO = PSP::PBP::PSISO::Maker->new( "$argv{'d'}/NEW_DATA.PSAR" );
-$PSISO->set( "UNKNOWN.DAT", "$argv{'d'}/UNKNOWN.DAT" );
+push( @g_tmpfiles, "${TempPrefix}NEW_DATA.PSAR" );
+print "Creating new DATA.PSAR to ${TempPrefix}NEW_DATA.PSAR...";
+my $PSISO = PSP::PBP::PSISO::Maker->new( "${TempPrefix}NEW_DATA.PSAR" );
+$PSISO->set( "UNKNOWN.DAT", "${TempPrefix}UNKNOWN.DAT" );
 $PSISO->set( "GAMEDATA", $isoimg );
-$PSISO->set( "STARTDAT", "$argv{'d'}/STARTDAT" );
+$PSISO->set( "STARTDAT", "${TempPrefix}STARTDAT" );
 $PSISO->make;
 die( $PSISO->error . "\n" ) if( $PSISO->error );
 print "done.\n";
 
 print "Creating new EBOOT.PBP to $argv{'o'}...";
 my $PBP = PSP::PBP::Maker->new( $argv{'o'} );
-$PBP->set( 'PARAM.SFO', "$argv{'d'}/PARAM.SFO" );
-$PBP->set( 'DATA.PSP', "$argv{'d'}/DATA.PSP" );
-$PBP->set( 'DATA.PSAR', "$argv{'d'}/NEW_DATA.PSAR" );
+foreach( PBP_STRUCT_SEQ ){
+	next if( $_ eq 'DATA.PSAR' );
+	$PBP->set( $_, "${TempPrefix}$_" ) if( -f "${TempPrefix}$_" );
+}
+$PBP->set( 'DATA.PSAR', "${TempPrefix}NEW_DATA.PSAR" );
 $PBP->make;
 die( $PBP->error . "\n" ) if( $PBP->error );
 print "done.\n";
 
-my $success = 1;
+$success = 1;
 
 END{
 	if( scalar( @g_tmpfiles ) ){
@@ -179,15 +180,17 @@ END{
 sub extract_files
 {
 	my $SRC_FILE = shift;
-	my %ex_files = @_;
+	my @ex_files = @_;
 	
-	printf( "Extracting %s from %s...", join( ',', keys( %ex_files ) ), $SRC_FILE->file );
 	$SRC_FILE->parse;
-	foreach( keys( %ex_files ) ){
-		$SRC_FILE->fdump( $_, $ex_files{$_} );
+	foreach( @ex_files ){
+		next if( not $SRC_FILE->len( $_ ) );
+		printf( "Extracting %s to %s from %s...", $_, "${TempPrefix}$_", $SRC_FILE->file );
+		$SRC_FILE->fdump( $_, "${TempPrefix}$_" );
+		push( @g_tmpfiles, "${TempPrefix}$_" );
+		print "done.\n";
 	}
 	die( $SRC_FILE->error . "\n" ) if( $SRC_FILE->error );
-	print "done.\n";
 	
 	return 1;
 }

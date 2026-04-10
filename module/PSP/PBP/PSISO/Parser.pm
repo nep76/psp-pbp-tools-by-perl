@@ -49,7 +49,11 @@ sub parse{
 	
 	$self->{'total_len'} = ( stat( $PSISO->fh ) )[7];
 	
-	$PSISO->move( 'HEAD', length( PSISO_HEADER ) );
+	if( $PSISO->read( length( PSISO_HEADER ) ) ne PSISO_HEADER ){
+		$self->{'error'}->putin( "$self->{'file'} is invalid PSISO" );
+		return;
+	}
+	
 	$self->{'offset'}->{'STARTDAT'} = little_endian_hex2dec( $PSISO->read( 4 ) );
 	$self->{'len'}->{'STARTDAT'}    = $self->{'total_len'} - $self->{'offset'}->{'STARTDAT'};
 	$self->{'offset'}->{'GAMEDATA'} = GAMEDATA_OFFSET;

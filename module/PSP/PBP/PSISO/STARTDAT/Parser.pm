@@ -1,8 +1,5 @@
 package PSP::PBP::PSISO::STARTDAT::Parser;
 
-# PSP PSISO STARTDAT parser module
-# http://classg.sytes.net
-
 #use strict;
 #use warnings;
 use vars qw( $VERSION );
@@ -48,7 +45,11 @@ sub parse{
 	
 	$self->{'total_len'} = ( stat( $STARTDAT->fh ) )[7];
 	
-	$STARTDAT->move( 'HEAD', length( STARTDAT_HEADER ) );
+	if( $STARTDAT->read( length( STARTDAT_HEADER ) ) ne STARTDAT_HEADER ){
+		$self->{'error'}->putin( "$self->{'file'} is invalid STARTDAT" );
+		return;
+	}
+	
 	$STARTDAT->move( 'CUR', length( STARTDAT_UNKNOWN_HEADER_DATA ) );
 	$self->{'offset'}->{'SPLASH.PNG'} = little_endian_hex2dec( $STARTDAT->read( 4 ) );
 	$self->{'len'}->{'SPLASH.PNG'}    = little_endian_hex2dec( $STARTDAT->read( 4 ) );

@@ -1,8 +1,5 @@
 package PSP::PBP::PSISO::STARTDAT::Const;
 
-# PSP PSISO STARTDAT shared module
-# http://classg.sytes.net
-
 #use strict;
 #use warnings;
 use vars qw( $VERSION @ISA @EXPORT );

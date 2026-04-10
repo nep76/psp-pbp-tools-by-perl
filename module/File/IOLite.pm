@@ -2,7 +2,6 @@ package File::IOLite;
 require 5.6.0;
 
 # File::IOLite
-# http://classg.sytes.net
 
 #use strict;
 #use warnings;

@@ -1,7 +1,6 @@
 package DecHex;
 
 # PSP PBP tools shared module
-# http://classg.sytes.net
 
 #use strict;
 #use warnings;
