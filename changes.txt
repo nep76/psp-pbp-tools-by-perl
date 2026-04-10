@@ -1,0 +1,44 @@
+PSP PBP Tools by Perl (changes log)
+
+This document was stored in EUC-JP.
+-------------------------------------------------
+
+2006/12/28
+  -全てのスクリプトを書き直した。
+  -PS1のゲームをカスタムファームウェア OE-B で使用できるようにするpsxconv.plを追加。
+   (詳しくはreadme.txtを参照)
+
+2006/05/15
+  pkx.pl 2.1.2:
+    -破損ファイル非表示の別法を実装。
+
+2006/03/31
+  ppe.pl 1.2.1:
+    -create/rewriteで、エラーで処理が中断された際に一時ファイルが残留する現象を修正。
+
+2006/03/30
+  ppe.pl 1.2.0:
+    -create/rewriteで、HTTP-URIを指定できるようにした。
+
+2006/03/14
+  pkx.pl 2.0.2:
+    -前回の修正で更に発生したバグの修正。
+  ppe.pl 1.1.1:
+    -KXploit済みのEBOOT.PBPに対して操作しようとすると破損ファイルになってしまうのを修正。
+    -rewriteの-oオプションを変更。
+    -extract専用のオプションを廃止。
+    -extractの引数を、create/rewriteの引数と統一。
+
+2006/03/13
+  pkx.pl 2.0.1:
+    -KXploit変換に失敗する場合があるのを修正。
+
+2006/03/12
+  pkx.pl         2.0.0
+  ppe.pl         1.0.0
+  PSP::PBPh      1.0.0
+  PSP::PBPMaker  1.0.0
+  PSP::PBPParser 1.0.0
+
+2006/03/09
+  pkx.pl 1.0.0

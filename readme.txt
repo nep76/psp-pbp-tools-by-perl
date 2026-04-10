@@ -1,232 +1,165 @@
-PSP PBP Tools by Perl
+PSP PBP tools by Perl (061228)
 
 This document was stored in EUC-JP.
 
-=== [概要] ================================================
-PSPのPBPファイルに対するいくつかの操作を行うためのPerlスクリプトです。
-このスクリプトはコマンドラインから実行します。
-以下のようなことができます。
+1.0用のPSP自作ソフトにKXploit変換を行う
+-------------------------------------------------
+  kxploit.pl [オプション] PBP_FILE
 
-    1. ファームウェア1.00用の自作アプリケーションを1.50で起動できるように変換する(KXploit)。
-           指定されたEBOOT.PBPに対してKXploitを行います。
-           ディレクトリを DIR と DIR% に分けて、PBPファイルを分割します。
+    オプション:
+      -o パス    インストール先ディレクトリを指定します。 (例: /mnt/PSP/GAME)
+                 指定されなかった場合は、カレントディレクトリになります。
 
-    2. PBPファイルの中身を差し替える。
-           PBPファイルの中身を表示したり差し替えることができます。
-           アイコンファイルを差し替えたり、背景画像を挿入したり、
-           BGMを削除するなどの操作を行えます。
+      -d ディレクトリ名
+                 基本となるディレクトリ名です。 (例: hello_psp_world)
+                 指定されなかった場合は、現在時刻が使用されます。
 
-Windowsにおいてはこの手のツールはいくつも存在するのですが、
-これがMacintoshやPC-UNIXとなると急に困ってしまいます。
-このスクリプトはそれを解決します。
+      -n         破損ファイル非表示を行いません。
 
-基本的に自分用として作成したので、自己責任で使用してください。
+      -r         古い破損ファイル非表示の方法を使用します。
+                 (長い名前のディレクトリ名は短くされます。)
 
-
-=== [ pkx.pl : KXploit toolの使い方 ] =====================
-
-    perl pkx.pl [options] Install_PBP_File
-
-Install_PBP_Fileは、インストールしたいアプリケーションのEBOOT.PBPで、この引数は必須です。
-以下はオプションです。
-   options:
-     -o PATH    インストール先のディレクトリを指定します。
-                (例 /mnt/PSP/GAME)
-                省略した場合は、カレントディレクトリと見なします。
-
-     -d DIRNAME インストール先に作成するディレクトリ名を指定します。
-                省略した場合は、現在の時間をディレクトリ名にします。
-
-     -a         別の方法で破損ファイルを非表示化します。
-                通常の方法では、%付きディレクトリが6文字に制限されますが、こちらは制限されません。
-
-     -h         ヘルプドキュメントを表示します。
-                英語の成績は悪かったので多分悲惨です。見逃してください。
-
-     -n         破損ファイル非表示を行いません。
-                希に破損ファイル非表示を行うとうまく動作しない場合があるようです。
-
-<KXploit>
-    1.00用のファイルを、ヘッダとデータ部に分割し、それぞれをEBOOT.PBPと命名。
-    そして、ヘッダ部を"%"記号の付くディレクトリに、データ部をそうでないディレクトリにいれることで、
-    ソフトウェアが起動できるというものです。
-
-    アイコンや壁紙はヘッダ部に記述されているので、それらを変更する場合は"%"記号の付くディレクトリにある
-    EBOOT.PBPに対して操作を行ってください。
-
-<破損ファイル非表示について>
-    破損ファイル非表示関連のオプションをなにも付けない場合は、
-    通常の破損ファイル非表示を行います。
-    これは、1.00用のファイルをヘッダとデータ部に分け、
-    それぞれを以下のように命名されたディレクトリへ保存します。
-
-        PSP_GA~1%
-        PSP_GAME_PROGRAM_______________1
-
-    これはヘッダディレクトリが6文字に制限されます。
-    ディレクトリ名を指定するときは、
-    先頭6文字が他のゲームのディレクトリと重複しないように注意する必要があります。
-
-    -nオプションを指定した場合は、破損ファイル非表示を行いません。
-    ヘッダディレクトリの末尾に%を付ける以外の操作は行わないため、ディレクトリ名の長さの制限はありません。
-
-        PSP_GAME_PROGRAM%
-        PSP_GAME_RPOGRAM
-
-    -aオプションはこれ以外の方法で破損ファイル非表示を行います。
-    このオプションは、破損ファイルを非表示にでき、なおかつディレクトリ名の長さの制限がありません。
-    しかし、全てのゲームで正常に動くかどうかを確認出来ないため、デフォルト動作ではありません。
-
-        %__SCE__PSP_GAME_PROGRAM
-        __SCE__PSP_GAME_PROGRAM
-
-    __SCE__をプレフィックスとして付けると、非表示が行えるようです。
-    この場合、%は先頭につけるようで、あまり見かけない形式です。
-    これは、www.psp-hacks.comのWebブラウザであるLinksで使われていたので参考に実装してみました。
-
-    私は、破損ファイル非表示の原理がわかりません。
-    なので、いずれの破損ファイル非表示も、他のソフトウェアの動作を参考にしているだけです。
-
-<使用例>
-
-    perl pkx.pl -o /mnt/PSP/GAME -d Appl /here/is/install/pbp/EBOOT.PBP
+  使用例
+      perl kxploit.pl -o /mnt/PSP/GAME -d SNES_TYL /home/me/EBOOT.PBP
 
 
-=== [ ppe.pl : PBP editorの使い方 ] =======================
+PBPファイルの中身を表示する
+-------------------------------------------------
+  pbplist.pl PBP_FILE
 
-    perl ppe.pl [operation] Target_PBP_File
 
-Target_PBP_Fileは、operationに依存します。この引数は必須です。
-以下はオペレーションです。
-    operation:
-      list            Target_PBP_Fileに含まれているファイルをリストで表示します。
+PBPファイルの中身を取り出す
+-------------------------------------------------
+  pbpextract.pl [オプション] PBP_FILE
 
-      help | -h       ヘルプドキュメントを表示します。
-                      英語の成績は悪かったので多分悲惨です。見逃してください。
+    オプション:
+      -p パス    PARAM.SFO の展開先を指定します。
+      -i パス    ICON0.PNG の展開先を指定します。
+      -a パス    ICON1.PNG の展開先を指定します。
+      -t パス    PIC0.PNG  の展開先を指定します。
+      -b パス    PIC1.PNG  の展開先を指定します。
+      -s パス    SND0.AT3  の展開先を指定します。
+      -0 パス    DATA.PSP  の展開先を指定します。
+      -1 パス    DATA.PSAR の展開先を指定します。
+  
+    特殊なオプション:
+      -o ディレクトリパス
+                 ディレクトリパスを指定します。
+                 これが指定されると、その他のオプションを全て無視して
+                 指定されたディレクトリへ含まれている構成ファイルを
+                 全て展開します。
 
-      extract CONTROL NAMEに指定されたファイルをPATHに展開します。
-                      NAMEを省略した場合は、"-all"。
-                      PATHを省略した場合は、カレントディレクトリと見なされます。
-                      NAMEは後述。
+  使用例
+    - ICON0.PNG をホームディレクトリへ取り出す
+      perl pbpextract.pl -i ~/ /here/is/any/EBOOT.PBP
+    
+    - ICON0.PNG をファイル名を指定してホームディレクトリに取り出す
+      perl pbpextract.pl -i ~/EXAMPLE.PNG /here/is/any/EBOOT.PBP
+    
+    - 全てのファイルをホームディレクトリへ取り出す
+      perl pbpextract.pl -o ~/ /here/is/any/EBOOT.PBP
 
-      create CONTROL  CONTROLに従ってPBPファイルを作成します。
-                      この場合、Target_PBP_FileはPBPファイルの作成場所です。
-                      CONTROLは後述。
 
-      rewrite CONTROL CONTROLに従って既存のPBPファイルの中身を差し替えます。
-                      CONTROLで指定されなかったものは既存のPBPファイルのものを維持します。
-                      Target_PBP_Fileは、書き換える既存のPBPを指定します。
-                      CONTROLは後述。
+PBPファイルの作成/編集を行う
+-------------------------------------------------
+  pbpmake.pl [オプション] [構成ファイル] PBP_FILE
 
-<CONTROL>
-	CONTROLではPBPファイルに使用するファイルのパスを指定します。
-	以下は、各オペレーションでの動作の詳細です。
-	
-	[注意]
-	このスクリプトは、rewrite時にオプションによっては一時ファイルを作成します。
-	この作成場所は、実行したppe.plが存在するディレクトリになるため、
-	ppe.plが書き込めないディレクトリに存在するとうまく動作しません。
-	必ず実効ユーザで書き込み可能なディレクトリ、あるいは書き込み可能なデバイス上で使用してください。
-	(そのうち一時ファイルの出力先を指定できるようにします。)
-	
-	create/rewrite:
-		これらのオペレーションでは、PATHにHTTP-URIを指定することもできます。
-        PATHが「http://」から開始されている場合は、HTTP-URIと見なしてダウンロードを試みます。
-		ダウンロードされた一時ファイルは使用後に自動的に削除されます。
-        (-o CONTROLには、いかなる場合もHTTP-URIは指定できません。)
-    extract:
-        PATHにはファイルを展開するローカルファイルパスを指定します。
-        HTTP-URIは指定できません。
-	
-    CONTROL:
-      -p PATH  PARAM.SFO    PBPメタデータファイル。
-      -m PATH  ICON0.PNG    メインアイコンファイル。
-      -a PATH  ICON1.PMF    アニメーションアイコンファイル。
-      -f PATH  PIC0.PNG     フロート背景画像。
-      -b PATH  PIC1.PNG     背景画像。
-      -s PATH  SND0.AT3     BGMファイル。
-      -0 PATH  DATA.PSP
-      -1 PATH  DATA.PSAR
+    オプション:
+      -e - | パス    読み込み元のPBPファイルを指定します。
+                     これは編集モードで、これが指定されている場合は、
+                     未指定の構成ファイルについてのみ、
+                     読み込み元のPBPファイルから引き継ぎます。
 
-    ( rewriteオペレーションでは PATH に対して "none" を指定するとそのファイルを取り除きます )
+                     "パス"は通常のファイルパスですが、
+                     "-" は特殊な値です。.
+                     これは、読み込み元として PBP_FILE と
+                     同じ物を指定するという意味になります。
+                     しかし、このままでは上書きできないので、この値を使用する場合は
+                     -f オプションも同時に指定してください。
 
-    以下のCONTROLはrewrite/extractオペレーションでのみ使用できます。
-    オペレーションによって、若干意味が変わります。
-      -o PATH  出力ディレクトリを指定。
-               rewrite:
-                 ファイルパスを指定します。そのパスへファイルを書き出します。
-                 (デフォルトでは、Target_PBP_Fileに上書きされます)
-               extract:
-                 ディレクトリパスを指定します。そのパスへ全てのファイルを展開します。
-                 (このオプションがある場合、他のオプションは全て無視されます)
+      -f             もし PBP_FILE が既に存在していても無視して上書きします。
 
-<使用例>
-	例えば、とあるEBOOT.PBPを自分のホームディレクトリに展開するには以下のようにします。
+      -d ディレクトリパス
+                     一時ファイルの出力先を指定します。
+                     デフォルトではカレントディレクトリを使用します。
+                     もしカレントディレクトリが書き込み可能ではない場合は、
+                     このオプションを使って出力先を変更してください。
 
-	    * すべて展開
-	    ppe.pl extract -o /here/is/your/home /here/is/any/EBOOT.PBP
+   構成ファイル:
+      -p remove | パス | URI    PARAM.SFO
+      -i remove | パス | URI    ICON0.PNG
+      -a remove | パス | URI    ICON1.PNG
+      -t remove | パス | URI    PIC0.PNG
+      -b remove | パス | URI    PIC1.PNG
+      -s remove | パス | URI    SND0.AT3
+      -0 remove | パス | URI    DATA.PSP
+      -1 remove | パス | URI    DATA.PSAR
+   
+   使用例
+     - 新しいPBPファイルをホームディレクトリに作成する
+       perl pbpmake.pl -p ./PARAM.SFP -p ./ICON0.PNG -0 ./DATA.PSP ~/EBOOT.PBP
+     
+     - ホームディレクトリにある既存のPBPファイルのICON0.PNGをimage.pngに差し替える
+       perl pbpmake.pl -e - -i ./image.png ~/EBOOT.PBP
+     
+     - ホームディレクトリにある既存のPBPファイルからSND0.AT3を取り除く
+       perl pbpmake.pl -e - -s remove ~/EBOOT.PBP
+     
+     - ホームディレクトリにある既存のPBPファイルのPIC1.PNGをbg.pngに変更し、
+       ICON1.PNGを取り除いて、変更後のPBPファイルを/mnt/umass/EBOOT.PBPへ保存する
+       perl pbpmake.pl -e ~/EBOOT.PBP -b ./bg.png -a remove /mnt/umass/EBOOT.PBP
+     
+     - ホームディレクトリにある既存のPBPファイルのICON0.PNGを
+       ネットワーク上にある http://example.com/psp_icon.png に変更する。
+       perl pbpmake.pl -e - -i http://example.com/psp_icon.png ~/EBOOT.PBP
 
-	特定のファイルのみを展開する場合は、展開先のパスをファイル名まで含めて指定します。
 
-	    * ICON0.PNGのみ展開
-	    ppe.pl extract -m /here/is/your/home/ICON0.PNG /here/is/any/EBOOT.PBP
+Dark_Alex氏によるカスタムファームウェア OE-B で、
+手持ちのPS1ソフトのディスクイメージを使えるようにする
+-------------------------------------------------
+  psxconv.pl [オプション] BASE_PBP ISO_IMAGE
+  
+    オプション:
+      -o パス        変換後のPS1ゲームファイルの出力先を指定します。
+                     デフォルトでは "./EBOOT.PBP" へ出力します。
 
-	    * ICON0.PNGとPIC1.PNGの二つを展開
-	    ppe.pl extract -m /here/is/your/home/ICON0.PNG -b /here/is/your/home/PIC0.PNG /here/is/any/EBOOT.PBP
+      -f             もし PBP_FILE が既に存在していても無視して上書きします。
 
-	カレントディレクトリに展開する場合は、単に出力先を指定しないようにすることでもできます。
+      -d ディレクトリパス
+                     一時ファイルの出力先を指定します。
+                     デフォルトではカレントディレクトリを使用します。
+                     もしカレントディレクトリが書き込み可能ではない場合は、
+                     このオプションを使って出力先を変更してください。
 
-	    * すべて展開
-	    ppe.pl extract /here/is/any/EBOOT.PBP
-	    ppe.pl extract -o /here/is/any/EBOOT.PBP
+      -n セーブデータディレクトリ名
+                     PS1ゲームのセーブデータが保存されるディレクトリ名を指定します。
+                     ただし、"_XXXX_YYYYY" というフォーマットに従わなければなりません。
+                     "X" は大文字のアルファベットです。
+                     "Y" は数値です。
+                     (例 _SLPS_12345 => ms0:/PSP/SAVEDATA/SLPS12345 )
 
-	    * ICON0.PNGとPIC1.PNGの二つを展開
-	    ppe.pl extract -m -b /here/is/any/EBOOT.PBP
+                     デフォルトでは "_SLPS_10000" が使用されます。
 
-	あるEBOOT.PBPの中身を差し替えるには以下のようにします。
+      -t セーブデータタイトル
+                     セーブデータのタイトルを指定します。
+                     デフォルトでは "PSX SAVEDATA" が使用されます。
 
-	    * ICON0.PNGを変更する
-	    ppe.pl rewrite -m /here/is/spec/ICON0.PNG /here/is/any/EBOOT.PBP
+      -s PNGファイル PSXエミュレータが起動するときのスプラッシュスクリーンを指定します。
+                     デフォルトでは、BASE_PBPが持っているスプラッシュスクリーンを使用します。
 
-	    * ICON0.PNGとPIC1.PNGを変更する
-	    ppe.pl rewrite -m /here/is/spec/ICON0.PNG -b /here/is/spec/PIC0.PNG /here/is/any/EBOOT.PBP
-
-	    * SND0.AT3を取り除く
-	    ppe.pl rewrite -s none /here/is/any/EBOOT.PBP
-
-		* ICON0.PNGをとあるWebサーバ上にあるファイルに差し替える
-		ppe.pl rewrite -m http://www.example.com/image/ICON0.PNG /here/is/any/EBOOT.PBP
-
-=== [履歴] ================================================
-2006/03/31
-  ppe.pl 1.2.1:
-    -create/rewriteで、エラーで処理が中断された際に一時ファイルが残留する現象を修正。
-
-2006/03/30
-  ppe.pl 1.2.0:
-    -create/rewriteで、HTTP-URIを指定できるようにした。
-  PSP::PBPh     1.1.0
-  PSP::PBPMaker 1.0.1
-
-2006/03/14
-  pkx.pl 2.0.2:
-    -前回の修正で更に発生したバグの修正。
-  ppe.pl 1.1.1:
-    -KXploit済みのEBOOT.PBPに対して操作しようとすると破損ファイルになってしまうのを修正。
-    -rewriteの-oオプションを変更。
-    -extract専用のオプションを廃止。
-    -extractの引数を、create/rewriteの引数と統一。
-
-2006/03/13
-  pkx.pl 2.0.1:
-    -KXploit変換に失敗する場合があるのを修正。
-
-2006/03/12
-  pkx.pl         2.0.0
-  ppe.pl         1.0.0
-  PSP::PBPh      1.0.0
-  PSP::PBPMaker  1.0.0
-  PSP::PBPParser 1.0.0
-
-2006/03/09
-  pkx.pl 1.0.0
+  概要
+    基本的には、Dark_Alex氏のpopstation.exeと同じ使い方ですが、
+    BASE.PBPが、カレントディレクトリのものを暗黙で使用するのではなく、指定できます。
+    
+    また、セーブディレクトリ名やセーブデータタイトルも変更できますが、
+    セーブデータは仮想メモリーカードファイルとして保存されるので変更する必要はほぼありません。
+    
+  注意
+    ここでは詳しく触れませんが、このスクリプトによる変換だけではPS1を起動出来るようにはなりません。
+    まず、ファームウェアがDark_Alex氏の OE-B である必要があります。
+    さらに、PLAYSTATION Storeで販売されているPSP用PS1ソフトに含まれているKEY.BINが必要なため、
+    PS3を使って最低一本はソフトを購入する必要があります。
+    
+    また、popstation.exeの結果を見比べて、似たような動作をするようにしているだけなので、
+    popstation.exeでは動くのにこれでは動かない、ということが起こるかもしれません。
+    よくわからない数値は0x00で埋めてしまっていたりするので。
